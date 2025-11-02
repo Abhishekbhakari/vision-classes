@@ -6,13 +6,14 @@ import { getAllCourses } from "../../Redux/courseSlice";
 
 const Courses = () => {
   const dispatch = useDispatch();
-  const { coursesData } = useSelector((state) => state.course);
+  // --- FIX: Read 'courseList' instead of 'coursesData' ---
+  const { courseList } = useSelector((state) => state.course);
 
   useEffect(() => {
     (async () => {
       await dispatch(getAllCourses());
     })();
-  }, []);
+  }, [dispatch]); // Added dispatch to dependency array
 
   return (
     <Layout>
@@ -25,7 +26,8 @@ const Courses = () => {
 
         {/* wrapper for courses card */}
         <div className="mb-10 flex flex-wrap gap-14">
-          {coursesData?.map((element) => {
+          {/* --- FIX: Map over 'courseList' --- */}
+          {courseList?.map((element) => {
             return <CourseCard key={element._id} data={element} />;
           })}
         </div>
@@ -34,4 +36,4 @@ const Courses = () => {
   );
 };
 
-export default Courses;
+export default Courses;

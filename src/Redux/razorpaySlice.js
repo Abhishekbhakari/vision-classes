@@ -1,124 +1,199 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { toast } from "react-hot-toast";
-import axiosInstance from "../Helper/axiosInstance";
+// import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+// import { toast } from 'react-hot-toast';
+
+// import axiosInstance from '../Helper/axiosInstance';
+// import { addPurchasedCourse } from './authSlice'; // Import the new reducer
+
+// const initialState = {
+//   key: '',
+//   order: null, // Replaced subscription_id with order
+//   isPaymentVerified: false,
+// };
+
+// // Thunk to get Razorpay key
+// export const getRazorpayKey = createAsyncThunk('/razorpay/getKey', async () => {
+//   try {
+//     const response = await axiosInstance.get('/payments/razorpay-key');
+//     return response.data;
+//   } catch (error) {
+//     toast.error('Failed to load Razorpay key');
+//   }
+// });
+
+// // Thunk to create a new order for a course
+// export const purchaseCourse = createAsyncThunk(
+//   '/razorpay/purchaseCourse',
+//   async (data) => {
+//     try {
+//       const response = await axiosInstance.post(
+//         '/payments/purchase-course',
+//         data
+//       );
+//       toast.success('Order created successfully');
+//       return response.data;
+//     } catch (error) {
+//       toast.error(error?.response?.data?.message || 'Failed to create order');
+//       throw error;
+//     }
+//   }
+// );
+
+// // Thunk to verify the payment
+// export const verifyCoursePayment = createAsyncThunk(
+//   '/razorpay/verifyPayment',
+//   async (data, { dispatch }) => {
+//     try {
+//       const response = await axiosInstance.post(
+//         '/payments/verify-payment',
+//         data
+//       );
+//       toast.success(response?.data?.message);
+      
+//       // Dispatch action to add course to auth state
+//       dispatch(addPurchasedCourse(data.courseId));
+      
+//       return response.data;
+//     } catch (error) {
+//       toast.error(
+//         error?.response?.data?.message || 'Payment verification failed'
+//       );
+//       throw error;
+//     }
+//   }
+// );
+
+// const razorpaySlice = createSlice({
+//   name: 'razorpay',
+//   initialState,
+//   reducers: {
+//     clearOrder: (state) => {
+//       state.order = null;
+//     }
+//   },
+//   extraReducers: (builder) => {
+//     builder
+//       .addCase(getRazorpayKey.fulfilled, (state, action) => {
+//         state.key = action?.payload?.key;
+//       })
+//       .addCase(purchaseCourse.fulfilled, (state, action) => {
+//         state.order = action?.payload?.order;
+//       })
+//       .addCase(verifyCoursePayment.fulfilled, (state, action) => {
+//         state.isPaymentVerified = action?.payload?.success;
+//       })
+//       .addCase(verifyCoursePayment.rejected, (state) => {
+//         state.isPaymentVerified = false;
+//       });
+//   },
+// });
+
+// export const { clearOrder } = razorpaySlice.actions;
+// export default razorpaySlice.reducer;
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { toast } from 'react-hot-toast';
+
+import axiosInstance from '../Helper/axiosInstance';
+import { addPurchasedCourse } from './authSlice';
 
 const initialState = {
-  key: "",
-  subscription_id: "",
+  key: '',
+  order: null,
   isPaymentVerified: false,
-  allPayments: {},
-  finalMonths: {},
-  monthlySalesRecord: [],
+  allPayments: [], // --- NEW STATE for Admin Dashboard
 };
 
-// function to get the api key
-export const getRazorPayId = createAsyncThunk("/razorPayId/get", async () => {
+export const getRazorpayKey = createAsyncThunk('/razorpay/getKey', async () => {
   try {
-    const res = await axiosInstance.get("/payments/razorpay-key");
-    return res.data;
-  } catch (error) {
-    toast.error("Failed to load data");
-  }
-});
-
-// function to purchase the course bundle
-export const purchaseCourseBundle = createAsyncThunk(
-  "/purchaseCourse",
-  async () => {
-    try {
-      const res = await axiosInstance.post("/payments/subscribe");
-      return res.data;
-    } catch (error) {
-      toast.error(error?.response?.data?.message);
-    }
-  }
-);
-
-// function to verify the user payment
-export const verifyUserPayment = createAsyncThunk(
-  "/verifyPayment",
-  async (paymentDetail) => {
-    try {
-      const res = await axiosInstance.post("/payments/verify", {
-        razorpay_payment_id: paymentDetail.razorpay_payment_id,
-        razorpay_subscription_id: paymentDetail.razorpay_subscription_id,
-        razorpay_signature: paymentDetail.razorpay_signature,
-      });
-      return res?.data;
-    } catch (error) {
-      toast.error("error?.response?.data?.message");
-    }
-  }
-);
-
-// function to get all the payment record
-export const getPaymentRecord = createAsyncThunk("paymentrecord", async () => {
-  try {
-    const res = axiosInstance.get("/payments?count=100");
-    toast.promise(res, {
-      loading: "Getting the payments record...",
-      success: (data) => {
-        return data?.data?.message;
-      },
-      error: "Failed to get payment records",
-    });
-
-    const response = await res;
+    const response = await axiosInstance.get('/payments/razorpay-key');
     return response.data;
   } catch (error) {
-    toast.error("Operation failed");
+    toast.error('Failed to load Razorpay key');
   }
 });
 
-// function to cancel the course bundle subscription
-export const cancelCourseBundle = createAsyncThunk(
-  "/cancelCourse",
-  async () => {
+export const purchaseCourse = createAsyncThunk(
+  '/razorpay/purchaseCourse',
+  async (data) => {
     try {
-      const res = axiosInstance.post("/payments/unsubscribe");
-      toast.promise(res, {
-        loading: "Unsubscribing the bundle...",
-        success: "Bundle unsubscibed successfully",
-        error: "Failed to unsubscibe the bundle",
-      });
-      const response = await res;
+      const response = await axiosInstance.post(
+        '/payments/purchase-course',
+        data
+      );
+      toast.success('Order created successfully');
       return response.data;
     } catch (error) {
-      toast.error(error?.response?.data?.message);
+      toast.error(error?.response?.data?.message || 'Failed to create order');
+      throw error;
     }
   }
 );
 
+export const verifyCoursePayment = createAsyncThunk(
+  '/razorpay/verifyPayment',
+  async (data, { dispatch }) => {
+    try {
+      const response = await axiosInstance.post(
+        '/payments/verify-payment',
+        data
+      );
+      toast.success(response?.data?.message);
+      dispatch(addPurchasedCourse(data.courseId));
+      return response.data;
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || 'Payment verification failed'
+      );
+      throw error;
+    }
+  }
+);
+
+// --- THIS IS THE NEW THUNK ---
+export const fetchAllPayments = createAsyncThunk(
+  '/razorpay/fetchAllPayments',
+  async () => {
+    try {
+      const response = await axiosInstance.get('/payments');
+      toast.success(response?.data?.message);
+      return response.data;
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || 'Failed to fetch payments'
+      );
+      throw error;
+    }
+  }
+);
+// --- END OF NEW THUNK ---
+
 const razorpaySlice = createSlice({
-  name: "razorpay",
+  name: 'razorpay',
   initialState,
-  reducers: {},
+  reducers: {
+    clearOrder: (state) => {
+      state.order = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(getRazorPayId.rejected, () => {
-        toast.error("Failed to get razor pay id");
-      })
-      .addCase(getRazorPayId.fulfilled, (state, action) => {
+      .addCase(getRazorpayKey.fulfilled, (state, action) => {
         state.key = action?.payload?.key;
       })
-      .addCase(purchaseCourseBundle.fulfilled, (state, action) => {
-        state.subscription_id = action?.payload?.subscription_id;
+      .addCase(purchaseCourse.fulfilled, (state, action) => {
+        state.order = action?.payload?.order;
       })
-      .addCase(verifyUserPayment.fulfilled, (state, action) => {
-        toast.success(action?.payload?.message);
+      .addCase(verifyCoursePayment.fulfilled, (state, action) => {
         state.isPaymentVerified = action?.payload?.success;
       })
-      .addCase(verifyUserPayment.rejected, (state, action) => {
-        toast.error(action?.payload?.message);
-        state.isPaymentVerified = action?.payload?.success;
+      .addCase(verifyCoursePayment.rejected, (state) => {
+        state.isPaymentVerified = false;
       })
-      .addCase(getPaymentRecord.fulfilled, (state, action) => {
-        state.allPayments = action?.payload?.allPayments;
-        state.finalMonths = action?.payload?.finalMonths;
-        state.monthlySalesRecord = action?.payload?.monthlySalesRecord;
+      // --- NEW REDUCER CASE ---
+      .addCase(fetchAllPayments.fulfilled, (state, action) => {
+        state.allPayments = action?.payload?.payments;
       });
   },
 });
 
-export const {} = razorpaySlice.actions;
+export const { clearOrder } = razorpaySlice.actions;
 export default razorpaySlice.reducer;
