@@ -1,124 +1,188 @@
-import React, { useState } from "react";
-import { toast } from "react-hot-toast";
-import { useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
-import Layout from "../Layout/Layout";
-import { login } from "../Redux/authSlice";
+"use client"
+
+import { useState } from "react"
+import { toast } from "react-hot-toast"
+import { useDispatch } from "react-redux"
+import { Link, useNavigate } from "react-router-dom"
+import { login } from "../Redux/authSlice"
+import {
+  BsEnvelope,
+  BsLock,
+  BsEye,
+  BsEyeSlash,
+  BsBoxArrowInRight,
+  BsArrowRight,
+} from "react-icons/bs"
 
 const Login = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const [showPassword, setShowPassword] = useState(false)
 
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
-  });
+  })
 
-  // function to handle the user input
+  const [isLoading, setIsLoading] = useState(false)
+
   const handleUserInput = (event) => {
-    const { name, value } = event.target;
+    const { name, value } = event.target
     setLoginData({
       ...loginData,
       [name]: value,
-    });
-  };
+    })
+  }
 
-  // function to login
   const handleLogin = async (event) => {
-    event.preventDefault();
+    event.preventDefault()
 
-    // checking the empty fields
     if (!loginData.email || !loginData.password) {
-      toast.error("Please fill all the fields");
-      return;
+      toast.error("Please fill all the fields")
+      return
     }
 
-    // calling login action
-    const res = await dispatch(login(loginData));
+    setIsLoading(true)
+    const res = await dispatch(login(loginData))
+    setIsLoading(false)
 
-    // redirect to home page if true
-    if (res?.payload?.success) navigate("/");
+    if (res?.payload?.success) {
+      navigate("/")
+      setLoginData({
+        email: "",
+        password: "",
+      })
+    }
+  }
 
-    // clearing the login inputs
-    setLoginData({
-      email: "",
-      password: "",
-    });
-  };
+  const handleGuestLogin = () => {
+    setLoginData({ email: "test@gmail.com", password: "Test@123" })
+  }
 
   return (
-    <Layout>
-      <div className="flex items-center justify-center h-[100vh]">
-        <form
-          onSubmit={handleLogin}
-          className="flex flex-col justify-center gap-4 rounded-lg p-4 text-white w-80 h-[26rem] shadow-[0_0_10px_black]"
-        >
-          <h1 className="text-center text-2xl font-bold">Login Page</h1>
-          <div className="flex flex-col gap-1">
-            <label className="text-lg font-semibold" htmlFor="email">
-              Email
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md">
+        {/* Logo/Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg mb-4">
+            <BsBoxArrowInRight className="w-7 h-7 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+          <p className="text-gray-600 mt-2">Sign in to your LearnHub account</p>
+        </div>
+
+        {/* Login Form Card */}
+        <form onSubmit={handleLogin} className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-900">
+              Email Address
             </label>
-            <input
-              required
-              type="email"
-              name="email"
-              id="email"
-              placeholder="Enter your email"
-              className="bg-transparent px-2 py-1 border"
-              value={loginData.email}
-              onChange={handleUserInput}
-            />
+            <div className="relative">
+              <BsEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Enter your email"
+                value={loginData.email}
+                onChange={handleUserInput}
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-gray-900"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-lg font-semibold" htmlFor="password">
-              Password
-            </label>
-            <input
-              required
-              type="password"
-              name="password"
-              id="password"
-              placeholder="Enter your password"
-              className="bg-transparent px-2 py-1 border"
-              value={loginData.password}
-              onChange={handleUserInput}
-            />
+          {/* Password Field */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-900">
+                Password
+              </label>
+              <Link
+                to="/forgetpassword"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                Forgot?
+              </Link>
+            </div>
+            <div className="relative">
+              <BsLock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                value={loginData.password}
+                onChange={handleUserInput}
+                className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-gray-900"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showPassword ? (
+                  <BsEyeSlash className="w-5 h-5" />
+                ) : (
+                  <BsEye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* guest account access */}
-          <div
-            onClick={() =>
-              setLoginData({ email: "test@gmail.com", password: "Test@123" })
-            }
-            className="text-center link text-accent cursor-pointer"
-          >
-            Guest Login
-          </div>
-
+          {/* Login Button */}
           <button
-            className="w-full bg-yellow-600 hover:bg-yellow-500 transition-all ease-in-out duration-300 rounded-sm py-2 font-semibold text-lg cursor-pointer"
             type="submit"
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Login
+            {isLoading ? (
+              "Signing in..."
+            ) : (
+              <>
+                Sign In <BsArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
 
-          <Link to={"/forgetpassword"}>
-            <p className="text-center link text-accent cursor-pointer">
-              Forget Password
-            </p>
+          {/* Guest Login */}
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            className="w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+          >
+            Try Guest Login
+          </button>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-600">Don't have an account?</span>
+            </div>
+          </div>
+
+          {/* Sign Up Link */}
+          <Link
+            to="/signup"
+            className="w-full block text-center bg-white border-2 border-blue-600 text-blue-600 py-3 px-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+          >
+            Create Account
           </Link>
-
-          <p className="text-center">
-            Don't have an account ?{" "}
-            <Link to={"/signup"} className="link text-accent cursor-pointer">
-              Create Account
-            </Link>
-          </p>
         </form>
-      </div>
-    </Layout>
-  );
-};
 
-export default Login;
+        {/* Footer */}
+        <p className="text-center text-sm text-gray-600 mt-8">
+          By signing in, you agree to our{" "}
+          <Link to="#" className="text-blue-600 hover:text-blue-700 font-medium">
+            Terms of Service
+          </Link>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export default Login

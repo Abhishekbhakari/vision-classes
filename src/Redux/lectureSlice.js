@@ -305,6 +305,50 @@ export const addHomeworkToLecture = createAsyncThunk(
   }
 );
 
+export const deleteHomework = createAsyncThunk(
+  "/course/homework/delete",
+  async ({ courseId, lectureId, hwId }, thunkAPI) => {
+    try {
+      const res = axiosInstance.delete(
+        `/courses/${courseId}/lectures/${lectureId}/homeworks/${hwId}`
+      );
+
+      toast.promise(res, {
+        loading: "Removing homework...",
+        success: "Homework removed",
+        error: "Failed to remove homework",
+      });
+
+      return res.then((r) => r.data);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Something went wrong");
+      return thunkAPI.rejectWithValue(error);
+    }
+  }
+)
+
+export const deleteHomeworkQuestion = createAsyncThunk(
+  "/course/homework/question/delete",
+  async ({ courseId, lectureId, hwId, questionId }, thunkAPI) => {
+    try {
+      const res = axiosInstance.delete(
+        `/courses/${courseId}/lectures/${lectureId}/homeworks/${hwId}/questions/${questionId}`
+      );
+
+      toast.promise(res, {
+        loading: "Removing question...",
+        success: "Question removed",
+        error: "Failed to remove question",
+      });
+
+      return res.then((r) => r.data);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Something went wrong");
+      return thunkAPI.rejectWithValue(error);
+    }
+  }
+);
+
 /**
  * NEW: fetch a single question solution (lazy-load)
  */
@@ -379,7 +423,33 @@ const lectureSlice = createSlice({
       })
       .addCase(updateLectureNotes.fulfilled, (state, action) => {
         // UI should re-fetch lectures after this; no direct mutation
-      });
+      })
+      .addCase(deleteHomeworkQuestion.fulfilled, (state, action) => {
+      const { lectureId, hwId, questionId } = action.payload;
+
+      // Find the lecture
+      const lecture = state.lectures.find((lec) => lec._id === lectureId);
+      if (!lecture) return;
+
+      // Find the homework
+      const homework = lecture.homeworks.find((hw) => hw._id === hwId);
+      if (!homework) return;
+
+      // Filter out the deleted question
+      homework.questions = homework.questions.filter(
+        (q) => q._id !== questionId
+      );
+    })
+     .addCase(deleteHomework.fulfilled, (state, action) => {
+      const { lectureId, hwId } = action.payload
+
+      // Find the lecture
+      const lecture = state.lectures.find((lec) => lec._id === lectureId)
+      if (!lecture) return
+
+      // Filter out the deleted homework
+      lecture.homeworks = lecture.homeworks.filter((hw) => hw._id !== hwId)
+    });
   },
 });
 

@@ -1,258 +1,175 @@
-import React, { useState } from "react";
-import { toast } from "react-hot-toast";
-import { useDispatch } from "react-redux";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import Layout from "../../Layout/Layout";
-import { createNewCourse, updateCourse } from "../../Redux/courseSlice";
-import { AiOutlineArrowLeft } from "react-icons/ai";
+// import React, { useState } from "react";
+// import { toast } from "react-hot-toast";
+// import { useDispatch } from "react-redux";
+// import { Link, useLocation, useNavigate } from "react-router-dom";
+// import Layout from "../../Layout/Layout";
+// import { createNewCourse, updateCourse } from "../../Redux/courseSlice";
+// import { AiOutlineArrowLeft } from "react-icons/ai";
+
+// const CreateCourse = () => {
+//   const dispatch = useDispatch();
+//   const navigate = useNavigate();
+
+//   // for getting the data from location of previous component
+//   const { initialCourseData } = useLocation().state;
+
+//   // for toggling disable of image input box
+//   const [isDisabled, setIsDisabled] = useState(!initialCourseData?.newCourse);
+
+//   // for storing the user input
+//   const [userInput, setUserInput] = useState({
+//     title: initialCourseData?.title,
+import React, { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { AiOutlineArrowLeft } from 'react-icons/ai';
+import { useDispatch } from 'react-redux';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+
+import Layout from '../../Layout/Layout';
+import { createNewCourse, updateCourse } from '../../Redux/courseSlice';
 
 const CreateCourse = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Support both patterns: location.state or location.state.initialCourseData
+  const initial = location.state?.initialCourseData ?? location.state ?? null;
 
-  // for getting the data from location of previous component
-  const { initialCourseData } = useLocation().state;
-
-  // for toggling disable of image input box
-  const [isDisabled, setIsDisabled] = useState(!initialCourseData?.newCourse);
-
-  // for storing the user input
   const [userInput, setUserInput] = useState({
-    title: initialCourseData?.title,
-    category: initialCourseData?.category,
-    createdBy: initialCourseData?.createdBy,
-    description: initialCourseData?.description,
+    title: initial?.title || '',
+    description: initial?.description || '',
+    category: initial?.category || '',
+    createdBy: initial?.createdBy || '',
+    price: initial?.price || 0,
     thumbnail: null,
-    previewImage: initialCourseData?.thumbnail?.secure_url,
+    previewImage: initial?.thumbnail?.secure_url || '',
   });
 
-  // function to handle the image upload
-  const getImage = (event) => {
-    event.preventDefault();
-    // getting the image
-    const uploadedImage = event.target.files[0];
-    console.log(uploadedImage);
+  // handle image selection and show preview
+  const handleImageUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
 
-    // if image exists then getting the url link of it
-    if (uploadedImage) {
-      // setUserInput({ ...userInput, thumbnail: uploadedImage });
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(uploadedImage);
-      fileReader.addEventListener("load", function () {
-        setUserInput({
-          ...userInput,
-          previewImage: this.result,
-          thumbnail: uploadedImage,
-        });
-      });
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function () {
+      setUserInput((prev) => ({ ...prev, previewImage: reader.result, thumbnail: file }));
+    };
+  };
+
+  const handleUserInput = (e) => {
+    const { name, value } = e.target;
+    setUserInput((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+
+    const { title, description, category, createdBy, price, thumbnail } = userInput;
+
+    if (!title || !description || !category || !createdBy) {
+      toast.error('All fields except price are required');
+      return;
     }
-  };
 
-  // function to handle user input
-  const handleUserInput = (event) => {
-    const { name, value } = event.target;
-    setUserInput({
-      ...userInput,
-      [name]: value,
-    });
-  };
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('category', category);
+    formData.append('createdBy', createdBy);
+    formData.append('price', price ?? 0);
+    if (thumbnail) formData.append('thumbnail', thumbnail);
 
-  // function to handle form submission
-  const handleFormSubmit = async (event) => {
-    event.preventDefault();
-
-    let res = undefined;
-
-    // for creating a new course
-    if (initialCourseData.newCourse) {
-      //   checking for the empty fields
-      console.log(userInput);
-      if (
-        !userInput.title ||
-        !userInput.category ||
-        !userInput.createdBy ||
-        !userInput.description ||
-        !userInput.thumbnail
-      ) {
-        toast.error("All fields are mandatory");
-        return;
+    try {
+      // debug FormData keys
+      // (binary values won't be printed fully)
+      for (const pair of formData.entries()) {
+        // eslint-disable-next-line no-console
+        console.log('FormData:', pair[0], pair[1]);
       }
 
-      // calling the api
-      res = await dispatch(createNewCourse(userInput));
-    }
-    // for updating an existing course
-    else {
-      //   checking for the empty fields
-      if (
-        !userInput.title ||
-        !userInput.category ||
-        !userInput.createdBy ||
-        !userInput.description
-      ) {
-        toast.error("All fields are mandatory");
-        return;
+      let res;
+      if (initial && initial._id) {
+        // update expects [id, formData]
+        res = await dispatch(updateCourse([initial._id, formData])).unwrap();
+      } else {
+        res = await dispatch(createNewCourse(formData)).unwrap();
       }
 
-      const data = { ...userInput, id: initialCourseData._id };
-      // calling the api
-      res = await dispatch(updateCourse(data));
-    }
-
-    // clearing the input fields
-    if (res?.payload?.success) {
-      setUserInput({
-        title: "",
-        category: "",
-        createdBy: "",
-        description: "",
-        thumbnail: undefined,
-        previewImage: "",
-      });
-
-      setIsDisabled(false);
-
-      // redirecting the user to admin dashboard
-      navigate("/admin/dashboard");
+      // some thunks return { success: true, ... } or { payload: { success: true } }
+      const ok = res?.success || res?.payload?.success || (res && res.success === true);
+      if (ok) {
+        setUserInput({ title: '', description: '', category: '', createdBy: '', price: 0, thumbnail: null, previewImage: '' });
+        navigate('/courses');
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Create/Update course failed:', err);
+      const message = err?.message || err?.payload?.message || err?.response?.data?.message || String(err) || 'Failed to create/update course';
+      toast.error(message);
     }
   };
+
+  useEffect(() => {
+    // If you need to add access control (only admins) you can check user role here and redirect.
+  }, []);
 
   return (
     <Layout>
-      <div className="flex items-center justify-center h-[100vh]">
-        {/* card for creating the new card */}
-        <form
-          onSubmit={handleFormSubmit}
-          className="flex flex-col justify-center gap-5 rounded-lg p-4 text-white w-[700px] h-[450px] my-10 shadow-[0_0_10px_black] relative"
-        >
-          <Link
-            to={"/admin/dashboard"}
-            className="absolute top-8 text-2xl link text-accent cursor-pointer"
-          >
+      <div className="flex items-center justify-center min-h-[90vh] py-10 text-white">
+        <form onSubmit={handleFormSubmit} className="flex flex-col justify-center gap-5 rounded-lg p-4 w-[700px] my-10 shadow-[0_0_10px_black] relative">
+          <Link to={'/admin/dashboard'} className="absolute top-8 text-2xl link text-accent cursor-pointer">
             <AiOutlineArrowLeft />
           </Link>
 
-          <h1 className="text-center text-2xl font-bold">
-            {!initialCourseData.newCourse ? "Update" : "Create new"}{" "}
-            <span>Course</span>
-          </h1>
+          <h1 className="text-center text-2xl font-bold">{initial ? 'Update Course' : 'Create New Course'}</h1>
 
           <main className="grid grid-cols-2 gap-x-10">
-            {/* for course basic details */}
             <div className="space-y-6">
-              <div
-                onClick={() =>
-                  !initialCourseData.newCourse
-                    ? toast.error("Cannot update thumbnail image")
-                    : ""
-                }
-              >
-                {/* input for image file */}
-                <label className="cursor-pointer" htmlFor="image_uploads">
+              <div>
+                <label htmlFor="image_uploads" className="cursor-pointer">
                   {userInput.previewImage ? (
-                    <img
-                      className="w-full h-44 m-auto border"
-                      src={userInput.previewImage}
-                      alt="preview image"
-                    />
+                    <img className="w-full h-44 m-auto border" src={userInput.previewImage} alt="preview" />
                   ) : (
                     <div className="w-full h-44 m-auto flex items-center justify-center border">
-                      <h1 className="font-bold text-lg">
-                        Upload your course thumbnail
-                      </h1>
+                      <h1 className="font-bold text-lg">Upload course thumbnail</h1>
                     </div>
                   )}
                 </label>
-                <input
-                  onChange={getImage}
-                  className="hidden"
-                  type="file"
-                  id="image_uploads"
-                  name="image_uploads"
-                  accept=".jpg, .jpeg, .png"
-                  disabled={isDisabled}
-                />
+                <input type="file" name="image_uploads" id="image_uploads" accept=".jpg, .jpeg, .png" className="hidden" onChange={handleImageUpload} />
               </div>
 
-              {/* adding the title section */}
               <div className="flex flex-col gap-1">
-                <label className="text-lg font-semibold" htmlFor="title">
-                  Course Title
-                </label>
-                <input
-                  required
-                  type="name"
-                  name="title"
-                  id="title"
-                  placeholder="Enter the course title"
-                  className="bg-transparent px-2 py-1 border"
-                  value={userInput.title}
-                  onChange={handleUserInput}
-                />
+                <label htmlFor="title" className="text-lg font-semibold">Course Title</label>
+                <input type="text" name="title" id="title" placeholder="Enter course title" className="bg-transparent px-2 py-1 border" value={userInput.title} onChange={handleUserInput} />
               </div>
             </div>
 
-            {/* for course description and go to profile button */}
-
-            {/* adding the course description */}
             <div className="flex flex-col gap-1">
-              {/* adding the instructor */}
               <div className="flex flex-col gap-1">
-                <label className="text-lg font-semibold" htmlFor="createdBy">
-                  Instructor Name
-                </label>
-                <input
-                  required
-                  type="name"
-                  name="createdBy"
-                  id="createdBy"
-                  placeholder="Enter the instructure name"
-                  className="bg-transparent px-2 py-1 border"
-                  value={userInput.createdBy}
-                  onChange={handleUserInput}
-                />
-              </div>
-
-              {/* adding the category */}
-              <div className="flex flex-col gap-1">
-                <label className="text-lg font-semibold" htmlFor="category">
-                  Course Category
-                </label>
-                <input
-                  required
-                  type="name"
-                  name="category"
-                  id="category"
-                  placeholder="Enter the category name"
-                  className="bg-transparent px-2 py-1 border"
-                  value={userInput.category}
-                  onChange={handleUserInput}
-                />
+                <label htmlFor="createdBy" className="text-lg font-semibold">Instructor Name</label>
+                <input type="text" name="createdBy" id="createdBy" placeholder="Enter instructor name" className="bg-transparent px-2 py-1 border" value={userInput.createdBy} onChange={handleUserInput} />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-lg font-semibold" htmlFor="description">
-                  Course Description
-                </label>
-                <textarea
-                  required
-                  type="text"
-                  name="description"
-                  id="description"
-                  placeholder="Enter the course description"
-                  className="bg-transparent px-2 py-1 border h-24 overflow-y-scroll resize-none"
-                  value={userInput.description}
-                  onChange={handleUserInput}
-                />
+                <label htmlFor="category" className="text-lg font-semibold">Course Category</label>
+                <input type="text" name="category" id="category" placeholder="Enter course category" className="bg-transparent px-2 py-1 border" value={userInput.category} onChange={handleUserInput} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label htmlFor="price" className="text-lg font-semibold">Course Price (in ₹)</label>
+                <input type="number" min="0" name="price" id="price" placeholder="Enter course price (e.g., 0 for free)" className="bg-transparent px-2 py-1 border" value={userInput.price} onChange={handleUserInput} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label htmlFor="description" className="text-lg font-semibold">Course Description</label>
+                <textarea name="description" id="description" placeholder="Enter course description" className="bg-transparent px-2 py-1 border h-24 resize-none" value={userInput.description} onChange={handleUserInput} />
               </div>
             </div>
           </main>
 
-          <button
-            className="w-full bg-yellow-600 hover:bg-yellow-500 transition-all ease-in-out duration-300 rounded-sm py-2 font-semibold text-lg cursor-pointer"
-            type="submit"
-          >
-            {!initialCourseData.newCourse ? "Update Course" : "Create Course"}
+          <button type="submit" className="w-full py-2 rounded-sm font-semibold text-lg cursor-pointer bg-yellow-600 hover:bg-yellow-500 transition-all duration-300 ease-in-out">
+            {initial ? 'Update Course' : 'Create Course'}
           </button>
         </form>
       </div>
@@ -261,3 +178,4 @@ const CreateCourse = () => {
 };
 
 export default CreateCourse;
+//                 </label>

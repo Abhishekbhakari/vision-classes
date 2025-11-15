@@ -72,15 +72,12 @@ const renderMathInText = (text) => {
 const MathContent = ({ content }) => {
   if (!content) return null;
   
-  return (
-    <div className="prose prose-invert max-w-none text-[15px] leading-relaxed">
-      {!containsLaTeX(content) ? (
-        <p className="whitespace-pre-wrap">{content}</p>
-      ) : (
-        renderMathInText(content)
-      )}
-    </div>
-  );
+  if (!containsLaTeX(content)) {
+    // If no LaTeX detected, return plain text wrapped in p tags
+    return <p className="whitespace-pre-wrap">{content}</p>;
+  }
+
+  return <div className="math-content">{renderMathInText(content)}</div>;
 };
 
 export default MathContent;

@@ -1,122 +1,162 @@
-import React, { useState } from "react";
-import { toast } from "react-hot-toast";
-import axiosInstance from "../Helper/axiosInstance";
-import Layout from "../Layout/Layout";
+"use client"
+
+import { useState } from "react"
+import { toast } from "react-hot-toast"
+import axiosInstance from "../Helper/axiosInstance"
+import Layout from "../Layout/Layout"
+import { BsEnvelope, BsTelephone, BsGeoAlt, BsSend } from "react-icons/bs"
 
 const Contact = () => {
   const [userInput, setUserInput] = useState({
     name: "",
     email: "",
     message: "",
-  });
+  })
 
-  // function to handle the input change
+  const [loading, setLoading] = useState(false)
+
   const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setUserInput({ ...userInput, [name]: value });
-  };
+    const { name, value } = event.target
+    setUserInput({ ...userInput, [name]: value })
+  }
 
-  // function to send form data to backend
   const handleFormSubmit = async (event) => {
-    event.preventDefault();
-    // check for empty fields
+    event.preventDefault()
+
     if (!userInput.email || !userInput.name || !userInput.message) {
-      toast.error("All fields are mandatory");
-      return;
+      toast.error("All fields are mandatory")
+      return
     }
 
-    // email validation using regex
-    if (
-      !userInput.email.match(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/)
-    ) {
-      toast.error("Invalid email id");
-      return;
+    if (!userInput.email.match(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/)) {
+      toast.error("Invalid email id")
+      return
     }
 
+    setLoading(true)
     try {
-      const res = axiosInstance.post("/contact", { ...userInput });
-      toast.promise(res, {
-        loading: "Submitting your message...",
-        success: "Form submitted successfully",
-        error: "Failed to submit the form",
-      });
-      const response = await res;
-
-      // clearing the input fields after successfull submission of form
-      if (response?.data?.success) {
-        setUserInput({
-          name: "",
-          email: "",
-          message: "",
-        });
+      const res = await axiosInstance.post("/contact", { ...userInput })
+      if (res?.data?.success) {
+        toast.success("Message sent successfully!")
+        setUserInput({ name: "", email: "", message: "" })
       }
     } catch (error) {
-      toast.error("Operation failed...");
+      toast.error("Failed to send message")
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <Layout>
-      <div className="flex items-center justify-center h-[100vh]">
-        <form
-          onSubmit={handleFormSubmit}
-          className="flex flex-col items-center justify-center gap-2 p-5 rounded-md text-white shadow-[0_0_10px_black] w-[22rem]"
-        >
-          <h1 className="text-3xl font-semibold">Contact Form</h1>
-          <div className="flex flex-col w-full gap-1">
-            <label className="text-xl font-semibold" htmlFor="name">
-              Name
-            </label>
-            <input
-              className="bg-transparent border px-2 py-1 rounded-sm"
-              id="name"
-              type="text"
-              name="name"
-              placeholder="Enter your name"
-              value={userInput.name}
-              onChange={handleInputChange}
-            />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Get In Touch</h1>
+            <p className="text-xl text-gray-600">We'd love to hear from you. Send us a message!</p>
           </div>
 
-          <div className="flex flex-col w-full gap-1">
-            <label className="text-xl font-semibold" htmlFor="email">
-              Email
-            </label>
-            <input
-              className="bg-transparent border px-2 py-1 rounded-sm"
-              id="email"
-              type="email"
-              name="email"
-              placeholder="Enter the email"
-              value={userInput.email}
-              onChange={handleInputChange}
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16">
+            {/* Contact Info Cards */}
+            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <BsEnvelope className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Email</h3>
+              </div>
+              <p className="text-gray-600">support@learnhub.com</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <BsTelephone className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Phone</h3>
+              </div>
+              <p className="text-gray-600">+1 (555) 123-4567</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <BsGeoAlt className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Location</h3>
+              </div>
+              <p className="text-gray-600">San Francisco, CA 94105</p>
+            </div>
           </div>
 
-          <div className="flex flex-col w-full gap-1">
-            <label className="text-xl font-semibold" htmlFor="message">
-              Message
-            </label>
-            <textarea
-              className="bg-transparent border px-2 py-1 rounded-sm resize-none h-40"
-              name="message"
-              id="message"
-              placeholder="Enter your message"
-              value={userInput.message}
-              onChange={handleInputChange}
-            ></textarea>
-          </div>
+          {/* Contact Form */}
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
+              <form onSubmit={handleFormSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    name="name"
+                    placeholder="Your name"
+                    value={userInput.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    required
+                  />
+                </div>
 
-          <button
-            className="w-full bg-yellow-600 hover:bg-yellow-500 transition-all ease-in-out duration-300 rounded-sm py-2 font-semibold text-lg cursor-pointer"
-            type="submit"
-          >
-            Submit
-          </button>
-        </form>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    placeholder="your.email@example.com"
+                    value={userInput.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    placeholder="Your message here..."
+                    value={userInput.message}
+                    onChange={handleInputChange}
+                    rows="6"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <BsSend className="w-5 h-5" />
+                  {loading ? "Sending..." : "Send Message"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
-  );
-};
+  )
+}
 
-export default Contact;
+export default Contact
