@@ -131,6 +131,7 @@ import {
   createPaymentOrder,
   verifyUserPayment,
   getRazorPayId,
+  enrollFreeCourse,
 } from '../../Redux/razorpaySlice';
 
 const Checkout = () => {
@@ -153,15 +154,29 @@ const Checkout = () => {
 
     // navigate to success/fail page
     res?.payload?.success
-      ? navigate('/checkout/success')
-      : navigate('/checkout/fail');
+      ? navigate('/checkout/success', { state: courseData })
+      : navigate('/checkout/fail', { state: courseData });
   };
 
-  // This function opens the Razorpay modal
+  // This function opens the Razorpay modal or handles free enrollment
   const onPurchase = async (e) => {
     e.preventDefault();
 
-    // Check if we have order details from the slice
+    // For FREE courses, handle enrollment directly
+    if (courseData?.price <= 0) {
+      toast.loading('Enrolling in course...');
+      const res = await dispatch(enrollFreeCourse(courseData._id));
+      toast.dismiss();
+      if (res?.payload?.success) {
+        toast.success('Enrolled successfully!');
+        navigate('/checkout/success', { state: courseData });
+      } else {
+        toast.error('Failed to enroll in course');
+      }
+      return;
+    }
+
+    // Check if we have order details from the slice for PAID courses
     if (!key || !order_id || !amount) {
       toast.error('Could not create order, please try again.');
       return;
@@ -196,12 +211,14 @@ const Checkout = () => {
       navigate('/courses');
       return;
     }
-    
+
     // Fetch razorpay key
     dispatch(getRazorPayId());
-    // Create the order
-    dispatch(createPaymentOrder(courseData._id));
 
+    // Create the order ONLY for PAID courses
+    if (courseData.price > 0) {
+      dispatch(createPaymentOrder(courseData._id));
+    }
   }, [dispatch, courseData, navigate]);
 
   return (
@@ -210,12 +227,12 @@ const Checkout = () => {
         onSubmit={onPurchase}
         className="min-h-[90vh] flex items-center justify-center text-white"
       >
-        <div className="w-80 h-[26rem] flex flex-col justify-center shadow-[0_0_10px_black] rounded-lg relative">
+        <div className="w-80 h-auto flex flex-col justify-center shadow-[0_0_10px_black] rounded-lg relative">
           <h1 className="bg-yellow-500 absolute top-0 w-full text-center py-4 text-2xl font-bold rounded-tl-lg rounded-tr-lg">
-            Checkout
+            {courseData?.price > 0 ? 'Checkout' : 'Free Enrollment'}
           </h1>
 
-          <div className="px-4 space-y-5 text-center">
+          <div className="px-4 space-y-5 text-center pt-20 pb-20">
             <div className="space-y-2">
               <h2 className="text-lg font-semibold">
                 Course: {courseData?.title}
@@ -223,21 +240,31 @@ const Checkout = () => {
               <p className="text-gray-400">
                 {courseData?.description?.substring(0, 100)}...
               </p>
-              <p className="text-2xl font-bold text-yellow-500">
-                Price: ₹{courseData?.price}
-              </p>
+              {courseData?.price > 0 ? (
+                <p className="text-2xl font-bold text-yellow-500">
+                  Price: ₹{courseData?.price}
+                </p>
+              ) : (
+                <p className="text-2xl font-bold text-green-500">FREE</p>
+              )}
             </div>
 
             <p className="text-gray-200">
-              This will grant you lifetime access to this course.
+              {courseData?.price > 0
+                ? 'This will grant you lifetime access to this course.'
+                : 'Click below to enroll in this free course'}
             </p>
           </div>
 
           <button
             type="submit"
-            className="bg-yellow-500 hover:bg-yellow-600 transition-all ease-in-out duration-300 absolute bottom-0 w-full text-center py-3 text-xl font-bold rounded-bl-lg rounded-br-lg"
+            className={`${
+              courseData?.price > 0
+                ? 'bg-yellow-500 hover:bg-yellow-600'
+                : 'bg-green-500 hover:bg-green-600'
+            } transition-all ease-in-out duration-300 absolute bottom-0 w-full text-center py-3 text-xl font-bold rounded-bl-lg rounded-br-lg`}
           >
-            Buy Now
+            {courseData?.price > 0 ? 'Buy Now' : 'Enroll for Free'}
           </button>
         </div>
       </form>
